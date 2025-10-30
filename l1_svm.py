@@ -4,17 +4,13 @@ import matplotlib.pyplot as plt
 from Parte_1 import *
 
 
-def generar_datos_svm(n_samples=100, random_state=randint(0, 100)):
+def generar_datos_svm(n_samples=100, random_state=42):
     from sklearn.datasets import make_blobs
     X, y = make_blobs(n_samples=n_samples, centers=2, n_features=2, random_state=random_state, cluster_std=2.5, center_box=(-10.0, 10.0))
     y = np.where(y == 0, -1, 1)  # Convertir etiquetas a -1 y 1
     return X, y
 
 def generate_svm_matrix(X, y, C):
-
-    C = 0.1
-
-    X, y = generar_datos_svm(n_samples=100)
 
     I, J = X.shape
 
@@ -89,5 +85,7 @@ def solve_simplex_svm(X, y, C, print_sol = True, plot=True):
 
     if plot:
         plot_result()
+
+    del engine
 
 
