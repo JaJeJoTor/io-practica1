@@ -73,10 +73,8 @@ class Simplex:
 
         def update_base_dual():
             # elegir la fila con b mínimo
-            row_out = int(np.argmin(self.b_submatrix))
+            row_out = np.argmin(self.b_submatrix)
             B_out = self.base[row_out]
-
-            assert self.c_submatrix[B_out] >= 0, "No compatible con simplex dual"
 
             total_vars = self.n_restricciones + self.dimension_punto
             nonbase = np.delete(np.arange(total_vars), self.base)
@@ -100,7 +98,7 @@ class Simplex:
         if type == "primal":
             update_base_primal()
         elif type == "dual":
-            update_base_dual(), -2, -3, 0, 0, 0
+            update_base_dual()
         else:
             raise ValueError("Tipo de iteracion no reconocido, use 'primal' o 'dual'")
 
@@ -382,3 +380,76 @@ class Simplex:
         plt.ylim(0, x1_max)
 
         plt.show()
+
+
+# --------------------------
+
+from Parte_1 import *
+import numpy as np
+
+def generar_datos_svm(n_samples=10, n_features=2, random_state=42):
+    from sklearn.datasets import make_blobs
+    X, y = make_blobs(n_samples=n_samples, centers=2, n_features=n_features, random_state=random_state)
+    y = np.where(y == 0, -1, 1)  # Convertir etiquetas a -1 y 1
+    return X, y
+
+C = 1
+
+X, y = generar_datos_svm(n_samples=2, n_features=2)
+
+I, J = X.shape
+
+simplex_matrix = np.zeros(shape = (I+1, 2*J + 2*I + 4))
+simplex_matrix[0][0] = 1  # Coeficiente de la función objetivo
+simplex_matrix[0, 1:1 + 2*J] = 0.5
+simplex_matrix[0, 3+2*J:-1] = C
+
+
+
+for i in range(1, simplex_matrix.shape[0]):
+
+    i_data = i - 1
+
+    for j in range(1, simplex_matrix.shape[1]):
+        j = j-1
+        if j < J:
+            j_data = j
+            simplex_matrix[i][j+1] = -(y[i_data] * X[i_data][j_data])
+        elif J <= j < 2*J:
+            j_data = j - J
+            simplex_matrix[i][j+1] = y[i_data] * X[i_data][j_data]
+        elif 2*J <= j < 2*J + 1:
+            j_data = j - 2*J
+            simplex_matrix[i][j+1] = -y[i_data]
+        elif 2*J + 1 <= j < 2*J + 2:
+            j_data = j - (2*J + 1)
+            simplex_matrix[i][j+1] = +y[i_data]
+
+    simplex_matrix[i][2*J + 3 + i_data] = -1
+    simplex_matrix[i][-1] = -1
+
+simplex_matrix[1:, 2 * J + I + 3:-1] = np.eye(I)
+
+engine = Simplex(simplex_matrix)
+engine.combined_solver()
+
+
+plt.scatter(X[y==1][:,0], X[y==1][:,1], color='blue', label='Clase 1')
+plt.scatter(X[y==-1][:,0], X[y==-1][:,1], color='red', label='Clase -1')
+plt.show()
+
+punto = engine.point
+
+w1 = punto[0] - punto[2]
+w2 = punto[1] - punto[3]
+b = punto[4] - punto[5]
+
+x = np.linspace(np.min(X)-1, np.max(X)+1, 100)
+y_decision_boundary = (w1* x + b)
+
+
+
+
+
+
+plt.plot(x, y_decision_boundary, 'k-', label='Frontera de decisión')
