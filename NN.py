@@ -90,7 +90,7 @@ class NN(nn.Module):
             losses_train.append(loss_train / n_batches)
             losses_val.append(loss_val / n_batches)
             print(f"Epoch {e+1}/{epochs} | Train Loss: {losses_train[-1]:.4f} | "
-              f"Val Loss: {losses_val[-1]:.4f} | Accuracy: {self.accuracy():.2f}%")
+              f"Val Loss: {losses_val[-1]:.4f} | Accuracy: {self.accuracy(datasets_test*100):.2f}%")
         
         plt.figure()
         plt.plot(losses_train, label="Train Loss", color="blue") 
