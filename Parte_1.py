@@ -249,7 +249,7 @@ class Simplex:
         def mapping(var_index):
             # las variables duales son holgura en el primal
             if var_index < self.dimension_punto:
-                return var_index - self.dimension_punto
+                return var_index + self.n_restricciones
             else:
                 return var_index - self.dimension_punto
 
