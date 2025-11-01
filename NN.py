@@ -4,6 +4,7 @@ from torch.optim import Adam
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score
+import torch
 
 
 
@@ -40,15 +41,18 @@ class NN(nn.Module):
         return nn.Softmax(dim= 1)(self.forward_sin_softamx(x))
 
 
-    def train_(self, datasets_train, datasets_test, epochs, batchsize=64):
+    def train_(self, datasets_train, datasets_test, epochs, batchsize=64, device= 'cuda'):
 
-        train = DataLoader(datasets_train, batch_size= batchsize, shuffle= True, num_workers= 0, pin_memory= True, drop_last= True)
-        test = DataLoader(datasets_test, batch_size= 1024, num_workers= 0, pin_memory= True)
+        pin_memory = True if device == 'cuda' else False
+
+        train = DataLoader(datasets_train, batch_size= batchsize, shuffle= True, num_workers= 0,\
+                           pin_memory= pin_memory, drop_last= True)
+        test = DataLoader(datasets_test, batch_size= 1024, num_workers= 0, pin_memory= pin_memory)
 
         optimizer = Adam(self.parameters(), lr= 1e-4)
         criterion = nn.CrossEntropyLoss(reduction= 'mean')
 
-        self.to('cuda')
+        self.to(device)
 
         losses_train = []
         losses_val = []
@@ -64,7 +68,7 @@ class NN(nn.Module):
 
                 optimizer.zero_grad()
 
-                x, y = x.to('cuda'), y.to('cuda')
+                x, y = x.to(device), y.to(device)
 
                 y_pred = self.forward_sin_softamx(x)
 
@@ -80,7 +84,7 @@ class NN(nn.Module):
 
             for x, y in test:
                 
-                x, y = x.to('cuda'), y.to('cuda')
+                x, y = x.to(device), y.to(device)
 
                 y_pred = self.forward_sin_softamx(x)
 
@@ -90,7 +94,7 @@ class NN(nn.Module):
             losses_train.append(loss_train / n_batches)
             losses_val.append(loss_val / n_batches)
             print(f"Epoch {e+1}/{epochs} | Train Loss: {losses_train[-1]:.4f} | "
-              f"Val Loss: {losses_val[-1]:.4f} | Accuracy: {self.accuracy(datasets_test*100):.2f}%")
+              f"Val Loss: {losses_val[-1]:.4f} | Accuracy: {self.accuracy(datasets_test)*100:.2f}%")
         
         plt.figure()
         plt.plot(losses_train, label="Train Loss", color="blue") 
@@ -104,17 +108,19 @@ class NN(nn.Module):
         return losses_train, losses_val
     
 
-    def accuracy(self, test):
+    def accuracy(self, test, device= 'cuda'):
 
         self.eval()  # modo evaluación
         correct = 0
         total = 0
 
-        test = DataLoader(test, batch_size= 1024, num_workers= 8, pin_memory= True)
+        pin_memory = True if device == 'cuda' else False
+
+        test = DataLoader(test, batch_size= 1024, num_workers= 8, pin_memory= pin_memory)
 
         with torch.no_grad():  # no necesitamos gradientes en test
             for images, labels in test:
-                images, labels = images.to('cuda'), labels.to('cuda')
+                images, labels = images.to(device), labels.to(device)
                 
                 outputs = self(images)
                 y_pred = torch.argmax(outputs, dim= 1)

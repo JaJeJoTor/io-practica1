@@ -1,0 +1,5 @@
+# La carpeta data
+/data
+
+# El pycache
+/__pycache__

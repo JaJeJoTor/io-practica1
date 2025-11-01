@@ -19,9 +19,15 @@ X_train, X_test = X_train.reshape(len(X_train), -1) / 255, X_test.reshape(len(X_
 
 # Hemos buscado en internet los mejores parámetros para este problema
 clf = SVC(kernel='rbf', gamma= 0.05, C= 5, random_state= 42, max_iter= 1000)
+
 print('Entrenando...')
+# Entrenamos y predecimos para test
 clf.fit(X_train, y_train)
 y_pred = clf.predict(X_test)
+
+# Printeamos métricas
 print(f'Accuracy: {accuracy_score(y_test, y_pred)} || F1: {f1_score(y_test, y_pred, average= "weighted")}')
+
+# Guardamos el modelo
 joblib.dump(clf, 'SVC.pkl')
 
