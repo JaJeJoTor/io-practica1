@@ -2,11 +2,10 @@ import torch
 
 from torch import nn
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 
 from NN import NN
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def fgsm_attack(model: NN, criterion, images, labels, epsilon=0.05):
     # Establecemos que a la hora de hacer loss.backward() también calcule 
@@ -19,14 +18,14 @@ def fgsm_attack(model: NN, criterion, images, labels, epsilon=0.05):
     model.zero_grad()
     loss.backward()
 
-    # Modificamos la imagen con el método de FGSM y lo normalizamos entre -1 y 1.
+    # Modificamos la imagen con el método de FGSM y lo normalizamos entre 0 y 1.
     modification = epsilon * images.grad.data.sign()
     modified_images= images + modification
-    modified_images = torch.clamp(modified_images, -1, 1)
+    modified_images = torch.clamp(modified_images, 0, 1)
     return modified_images
 
 
-def get_adversarial_images(model: NN, dataset, criterion= nn.CrossEntropyLoss(reduction='mean'), epsilon= 0.05):
+def get_adversarial_images(model: NN, dataset, criterion= nn.CrossEntropyLoss(reduction='mean'), epsilon= 0.05, device= 'cuda'):
 
     modified_images = None
     labels = None
@@ -34,7 +33,7 @@ def get_adversarial_images(model: NN, dataset, criterion= nn.CrossEntropyLoss(re
     for images, labels_ in dataset:
         images, labels_ = images.to(device), labels_.to(device)
         if modified_images is None:
-            modified_images = fgsm_attack(model, criterion, images, labels_, epsilon=epsilon)
+            modified_images = fgsm_attack(model, criterion,images, labels_, epsilon=epsilon)
             labels = labels_
         else:
             modified_images = torch.cat([modified_images, fgsm_attack(model, criterion, images, labels_, epsilon=epsilon)], dim= 0)
@@ -44,6 +43,9 @@ def get_adversarial_images(model: NN, dataset, criterion= nn.CrossEntropyLoss(re
         
     
 if __name__ == "__main__":
+
+    device = 'cuda'
+
     # Cargamos el modelo.
     model = NN(28*28)
     model.to(device)
@@ -53,13 +55,15 @@ if __name__ == "__main__":
     # Cargamos el dataset.
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
     test_dataset  = datasets.MNIST(root='./data', train=False, download=True, transform=transform)
-    test_dataset = DataLoader(test_dataset, batch_size= 256, pin_memory= True)
-    
+    # Normalizamos el dataset
+    test_dataset = DataLoader(TensorDataset(test_dataset.data.float() / 255, test_dataset.targets), batch_size= 2048,\
+                              pin_memory= device == 'cuda')
+
     # Calculamos los distintos accuracies para distintas epsilons.
     
 # TODO: Gráficas y mirar a partir de qué épsilon se nota.
     
-    for epsilon in [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]:
+    for epsilon in [0.0, 0.03, 0.05, 0.08, 0.1, 0.15, 0.2]:
 
         criterion = nn.CrossEntropyLoss(reduction='mean')
 

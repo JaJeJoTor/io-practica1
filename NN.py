@@ -1,11 +1,9 @@
 from torch import nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 from torch.optim import Adam
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from sklearn.metrics import accuracy_score
 import torch
-
 
 
 
@@ -41,13 +39,13 @@ class NN(nn.Module):
         return nn.Softmax(dim= 1)(self.forward_sin_softamx(x))
 
 
-    def train_(self, datasets_train, datasets_test, epochs, batchsize=64, device= 'cuda'):
+    def train_(self, X_train, y_train, X_test, y_test, epochs, batchsize=64, device= 'cuda'):
 
         pin_memory = True if device == 'cuda' else False
 
-        train = DataLoader(datasets_train, batch_size= batchsize, shuffle= True, num_workers= 0,\
+        train = DataLoader(TensorDataset(X_train, y_train), batch_size= batchsize, shuffle= True, num_workers= 0,\
                            pin_memory= pin_memory, drop_last= True)
-        test = DataLoader(datasets_test, batch_size= 1024, num_workers= 0, pin_memory= pin_memory)
+        test = DataLoader(TensorDataset(X_test, y_test), batch_size= 1024, num_workers= 0, pin_memory= pin_memory)
 
         optimizer = Adam(self.parameters(), lr= 1e-4)
         criterion = nn.CrossEntropyLoss(reduction= 'mean')
@@ -94,7 +92,7 @@ class NN(nn.Module):
             losses_train.append(loss_train / n_batches)
             losses_val.append(loss_val / n_batches)
             print(f"Epoch {e+1}/{epochs} | Train Loss: {losses_train[-1]:.4f} | "
-              f"Val Loss: {losses_val[-1]:.4f} | Accuracy: {self.accuracy(datasets_test)*100:.2f}%")
+              f"Val Loss: {losses_val[-1]:.4f} | Accuracy: {self.accuracy(X_test, y_test)*100:.2f}%")
         
         plt.figure()
         plt.plot(losses_train, label="Train Loss", color="blue") 
@@ -108,7 +106,7 @@ class NN(nn.Module):
         return losses_train, losses_val
     
 
-    def accuracy(self, test, device= 'cuda'):
+    def accuracy(self, X_test, y_test, device= 'cuda'):
 
         self.eval()  # modo evaluación
         correct = 0
@@ -116,7 +114,7 @@ class NN(nn.Module):
 
         pin_memory = True if device == 'cuda' else False
 
-        test = DataLoader(test, batch_size= 1024, num_workers= 8, pin_memory= pin_memory)
+        test = DataLoader(TensorDataset(X_test, y_test), batch_size= 1024, num_workers= 8, pin_memory= pin_memory)
 
         with torch.no_grad():  # no necesitamos gradientes en test
             for images, labels in test:
@@ -145,6 +143,7 @@ if __name__ == '__main__':
     test_dataset  = datasets.MNIST(root='./data', train=False, download=True, transform=transform)
 
     model = NN(28*28)
-    model.train_(train_dataset, test_dataset, 15)
-
+    print('Entrenando...')
+    model.train_(train_dataset.data.float() / 255, train_dataset.targets, test_dataset.data.float() / 255, test_dataset.targets, 10)
+    print('Terminado')
     torch.save(model.state_dict(), 'modelo.pth')
