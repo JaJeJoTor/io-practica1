@@ -77,7 +77,14 @@ def solve_simplex_svm(X, y, C, print_sol = True, plot=True, print_acc=True):
 
         # Hiperplano separador del L1-SVM
         x = np.linspace(x1_min, x1_max, 200)
-        y_decision = -w1 / w2 * x - b / w2
+
+        try:
+            y_decision = -w1 / w2 * x - b / w2
+        except ZeroDivisionError:
+            print("ha pasado lo rarete")
+            y_decision = np.linspace(x1_min, x1_max, 200)
+            x = -w2 / w1 * x - b / w1
+
 
         # Dibuja el hiperplano separador
         plt.plot(x, y_decision, 'k-', label='Hiperplano separador')

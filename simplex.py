@@ -68,7 +68,7 @@ class Simplex:
         new_matrix = base_change_matrix @ self.current_matrix
         return new_matrix
 
-    def iterate(self, type, return_extra_info=False):
+    def iterate(self, version, return_extra_info=False):
         """Realiza una iteración del Símplex actualizando la base en función del
         tipo que se le indique (primal o dual)."""
 
@@ -125,9 +125,9 @@ class Simplex:
             self.base = sorted(self.base)
 
         # Actualiza la base en función del tipo indicado
-        if type == "primal":
+        if version == "primal":
             update_base_primal()
-        elif type == "dual":
+        elif version == "dual":
             update_base_dual()
         else:
             raise ValueError("Tipo de iteracion no reconocido, use 'primal' o 'dual'")
@@ -151,7 +151,7 @@ class Simplex:
         else:
             return None
 
-    def solver(self, type, printear_intermedios = True, return_history = False):
+    def solver(self, version, printear_intermedios = True, return_history = False):
         """
         Esta función realiza las iteraciones de Símplex primal o dual (según el tipo indicado)
         hasta alcanzar la condición de parada correspondiente.
@@ -206,16 +206,16 @@ class Simplex:
 
             return all(self.b_submatrix >= 0)
 
-        if type == "primal":
+        if version == "primal":
             condition = primal_stop_condition
-        elif type == "dual":
+        elif version == "dual":
             condition = dual_stop_condition
         else:
             raise ValueError("Tipo de solver no reconocido, use 'primal' o 'dual'")
 
         point = self.point
 
-        if type == "primal" and not is_feasible():
+        if version == "primal" and not is_feasible():
             return None
 
         append_history()
@@ -232,10 +232,10 @@ class Simplex:
         while not condition():
 
             # Realiza una iteración de Símplex (primal o dual según se indique)
-            if type == "primal":
-                base, arguments, point, objective_value = self.iterate(type = "primal", return_extra_info = True)
+            if version == "primal":
+                base, arguments, point, objective_value = self.iterate(version="primal", return_extra_info = True)
             else:
-                base, arguments, point, objective_value = self.iterate(type = "dual", return_extra_info = True)
+                base, arguments, point, objective_value = self.iterate(version="dual", return_extra_info = True)
 
             append_history()
 
@@ -267,7 +267,7 @@ class Simplex:
         # Decide empezar por Símplex primal o dual en función de si el punto inicial es factible
         if is_feasible():
             print("ITERANDO CON EL PRIMAL".center(WITH, "-"))
-            self.solver(type="primal", printear_intermedios=True)
+            self.solver(version="primal", printear_intermedios=True)
         else:
             # Si el punto inicial no es factible, convierte el problema en uno de minimización
             # multiplicando la función objetivo por (-1) y realiza Símplex dual
@@ -275,7 +275,7 @@ class Simplex:
             self.current_matrix[0, 1:] = -self.current_matrix[0, 1:]
 
             print("ITERANDO CON EL DUAL".center(WITH, "-"))
-            self.solver(type="dual", printear_intermedios=True)
+            self.solver(version="dual", printear_intermedios=True)
 
             # Una vez terminadas las iteraciones duales, convierte el problema en uno de maximización
             # multiplicando la función objetivo por (-1) y realiza Símplex primal
@@ -283,7 +283,7 @@ class Simplex:
             self.current_matrix[0, 1:] = -self.current_matrix[0, 1:]
 
             print("ITERANDO CON EL PRIMAL".center(WITH, "-"))
-            self.solver(type="primal", printear_intermedios=True)
+            self.solver(version="primal", printear_intermedios=True)
 
     def transform_to_dual(self):
         """Esta función transforma la matriz Símplex original a su versión dual."""
@@ -325,7 +325,7 @@ class Simplex:
 
         aux_engine = Simplex(self.primal_original_matrix)
         aux_engine.base = primal_base
-        base, _, point, _ = aux_engine.iterate(type = "primal", return_extra_info=True)
+        base, _, point, _ = aux_engine.iterate(version="primal", return_extra_info=True)
 
         if printear:
             print("-"*WITH)
@@ -337,6 +337,7 @@ class Simplex:
             print("Valor objetivo:", np.array(objective_value, dtype=float))
             print("-"*WITH)
 
+        return point
 
     def plot_sol_history(self, size = 10):
         """
@@ -376,6 +377,7 @@ class Simplex:
                 if any(filtered_point_list[-1] != point):
                     filtered_point_list.append(point)
         points_list = np.array(filtered_point_list)
+        points_list = points_list.reshape(-1, 2)
 
         x_points = points_list[:, 0]
         y_points = points_list[:, 1]
