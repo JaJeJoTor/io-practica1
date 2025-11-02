@@ -1,7 +1,7 @@
 from random import randint
 import numpy as np
 import matplotlib.pyplot as plt
-from Parte_1 import *
+from simplex import *
 
 def generar_datos_svm(n_samples=100, random_state=42):
     """
