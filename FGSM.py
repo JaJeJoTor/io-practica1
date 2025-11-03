@@ -27,6 +27,8 @@ def fgsm_attack(model: NN, criterion, images, labels, epsilon=0.05):
 
 def get_adversarial_images(model: NN, dataset, criterion= nn.CrossEntropyLoss(reduction='mean'), epsilon= 0.05, device= 'cuda'):
 
+    model.to(device)
+
     modified_images = None
     labels = None
     # Hacemos ataque.
