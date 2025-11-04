@@ -106,7 +106,7 @@ def solve_simplex_svm(X, y, C, print_sol = True, plot=True, print_acc=True):
         y_pred = np.sign(pred)
 
         # Puntos sobre el hiperplano separador
-        y_pred[y_pred == 0] == 1
+        y_pred[y_pred == 0] = 1
         
         accuracy = np.sum(y == y_pred) / len(y)
         return accuracy
