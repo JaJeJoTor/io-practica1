@@ -42,6 +42,23 @@ class Simplex:
     def objective_value(self):
         return self.current_matrix[0, -1]
 
+    def _map_index_to_var_string(self, index):
+        """Esta función mapea un índice de variable a su representación en
+        cadena de texto (x1, x2, s1, s2, ...), se usa internamente para facilitar
+        la impresión de resultados."""
+
+        def single_map(index):
+
+            if index < self.dimension_punto:
+                return f"x{index + 1}"
+            else:
+                return f"s{index - self.dimension_punto + 1}"
+
+        if isinstance(index, (list, np.ndarray)):
+            return [single_map(i) for i in index]
+        elif isinstance(index, int):
+            return single_map(index)
+
     def __update_matrix(self):
         """Actualiza la matriz actual para la siguiente iteración del
         Símplex. Esta función espera que hayas actualizado la base siguiendo
@@ -163,10 +180,23 @@ class Simplex:
             self.history.append({
                 "iteration" : len(self.history),
                 "base": np.array(self.base, dtype=int),
+                "str_base": self._map_index_to_var_string(self.base),
                 "arguments": np.array(self.b_submatrix, dtype=float),
                 "point": np.array(point, dtype=float),
-                "objective_value": np.array(self.objective_value, dtype=float)
+                "objective_value": self.objective_value
             })
+
+            # En caso de haber cambio en la base añadimos la variable entrada y la salida
+            if len(self.history) >= 2 and all(self.history[-1]['base'] != self.history[-2]['base']):
+
+                last_base = set(self.history[-2]['base'])
+                current_base = set(self.history[-1]['base'])
+
+                v_in = int(list(current_base - last_base)[0])
+                v_out = int(list(last_base - current_base)[0])
+
+                self.history[-1]['v_in'] = v_in
+                self.history[-1]['v_out'] = v_out
 
         def is_feasible():
             """Esta función comprueba si el punto en la iteración actual se encuentra en
@@ -185,7 +215,12 @@ class Simplex:
 
             print("-"*WITH)
             print("\n- Iteracion", len(self.history)-1)
-            print(f"- Base actual:", np.array(base, dtype=int))
+
+            # En caso de haber cambio en la base imprimimos la variable entrada y la salida
+            if self.history[-1].get('v_in') and self.history[-1].get('v_out'):
+                print(f"- Variable de entrada: {self._map_index_to_var_string(self.history[-1]['v_in'])}")
+                print(f"- Variable de salida: {self._map_index_to_var_string(self.history[-1]['v_out'])}")
+            print(f"- Base actual:", self._map_index_to_var_string(np.array(base, dtype=int)))
             print("- Argumentos actuales:", np.array(arguments, dtype=float))
             print("- Punto actual:", np.array(point, dtype=float))
             print("- Valor objetivo actual:", np.array(objective_value, dtype=float))
@@ -330,7 +365,7 @@ class Simplex:
         if printear:
             print("-"*WITH)
             print("Solución del problema primal obtenida desde la solución del dual:")
-            print("Base primal:", np.array(primal_base, dtype=int))
+            print("Base primal:", self._map_index_to_var_string(np.array(primal_base, dtype=int)))
             print("Punto primal:", np.array(point, dtype=float))
             # Se puede obtener del primal, pero lo obtenemos del dual puesto que es un resultado del teorema de dualidad fuerte
             objective_value = self.objective_value
