@@ -2,7 +2,7 @@
 
 Resumen
 -------
-Repositorio de la práctica 1 de la asignatura Investigación Operativa. Contiene código, datos y documentación para resolver los ejercicios propuestos (modelado, resolución y análisis de resultados).
+Repositorio de la práctica 1 de la asignatura Investigación Operativa.
 
 Uso
 ---
