@@ -11,7 +11,7 @@ Uso
 
 Autores
 ---
-Jesús Blázquez Bautista
-Jaime Carrero Galisteo
-Jordi Hamberg Gallego
-Héctor Sancho Rodríguez
+- Jesús Blázquez Bautista
+- Jaime Carrero Galisteo
+- Jordi Hamberg Gallego
+- Héctor Sancho Rodríguez
